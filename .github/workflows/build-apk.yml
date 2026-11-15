@@ -50,8 +50,27 @@ jobs:
       - name: Install packages
         run: flutter pub get
 
-      - name: Build APK
-        run: flutter build apk --release
+      - name: Build APK and locate output
+        run: |
+          set +e
+          flutter build apk --release
+          BUILD_STATUS=$?
+          set -e
+
+          mkdir -p build/app/outputs/flutter-apk
+          APK_PATH="$(find build -type f -name '*-release.apk' -print -quit)"
+          if [ -z "$APK_PATH" ]; then
+            APK_PATH="$(find build -type f -name '*.apk' -print -quit)"
+          fi
+
+          if [ -z "$APK_PATH" ]; then
+            echo "No APK was generated. Build files found:"
+            find build -maxdepth 8 -type f \( -name '*.apk' -o -name '*.aab' \) -print || true
+            exit ${BUILD_STATUS:-1}
+          fi
+
+          echo "APK found at: $APK_PATH"
+          cp "$APK_PATH" build/app/outputs/flutter-apk/app-release.apk
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
