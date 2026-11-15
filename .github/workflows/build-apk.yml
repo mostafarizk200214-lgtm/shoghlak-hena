@@ -34,6 +34,19 @@ jobs:
       - name: Create Android files
         run: flutter create . --platforms=android
 
+      - name: Work around Android Lint crash in url_launcher
+        run: |
+          cat >> android/build.gradle <<'EOF'
+
+          subprojects {
+              tasks.configureEach {
+                  if (name == "lintVitalAnalyzeRelease") {
+                      enabled = false
+                  }
+              }
+          }
+          EOF
+
       - name: Install packages
         run: flutter pub get
 
